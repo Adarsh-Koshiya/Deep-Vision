@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-clean_fork_warnings.py — make the forked Ultralytics 8.0.201 run warning-free on
+clean_fork_warnings.py, make the forked Ultralytics 8.0.201 run warning-free on
 modern torch (2.8) / albumentations. Cosmetic only: these warnings never affected
 results, but a clean log matters for the report and reproduction.
 
@@ -27,9 +27,9 @@ if subprocess.run(["pgrep", "-f", "bash train.sh"], capture_output=True).returnc
 def patch(path: Path, old: str, new: str, label: str):
     text = path.read_text()
     if new in text and old not in text:
-        print(f"  [skip] {label} — already patched")
+        print(f"  [skip] {label}, already patched")
         return
-    assert old in text, f"PATTERN NOT FOUND for {label} in {path} — fork changed?"
+    assert old in text, f"PATTERN NOT FOUND for {label} in {path}, fork changed?"
     path.write_text(text.replace(old, new))
     print(f"  [ok]   {label}")
 
@@ -45,7 +45,7 @@ patch(FORK / "ultralytics/engine/trainer.py",
       "with torch.cuda.amp.autocast(self.amp):",
       "with torch.amp.autocast('cuda', enabled=self.amp):",
       "trainer.py autocast")
-# loss.py has 3 identical occurrences — patch() uses str.replace, hits all 3
+# loss.py has 3 identical occurrences, patch() uses str.replace, hits all 3
 patch(FORK / "ultralytics/utils/loss.py",
       "with torch.cuda.amp.autocast(enabled=False):",
       "with torch.amp.autocast('cuda', enabled=False):",
@@ -75,6 +75,6 @@ if "deterministic=False" not in t:
     ts.write_text(t)
     print("  [ok]   train.sh deterministic=False (both DETR models)")
 else:
-    print("  [skip] train.sh deterministic — already patched")
+    print("  [skip] train.sh deterministic, already patched")
 
 print("\nDone. Verify with a 1-epoch RT-DETR smoke test and confirm zero warnings.")

@@ -1,6 +1,6 @@
 {
   "model": "Diamond-DETR",
-  "weights": "/home/40a2/DV/Claude code/checkpoints/diamond_detr/weights/best.pt",
+  "weights": "weights/diamond_detr/best.pt",
   "mAP50": 0.7623,
   "mAP50_95": 0.4893,
   "precision": 0.7454,

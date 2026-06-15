@@ -1,6 +1,6 @@
 {
   "model": "RT-DETR",
-  "weights": "/home/40a2/DV/Claude code/checkpoints/rtdetr_baseline/weights/best.pt",
+  "weights": "weights/rtdetr_baseline/best.pt",
   "mAP50": 0.7626,
   "mAP50_95": 0.4455,
   "precision": 0.7334,

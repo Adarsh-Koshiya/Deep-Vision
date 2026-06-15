@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-prepare_data.py — Magnetic Tile Surface Defect -> YOLO multi-class detection format.
+prepare_data.py, Magnetic Tile Surface Defect -> YOLO multi-class detection format.
 
 5 defect classes (blowhole, break, crack, fray, uneven); defect-free tiles become
 negatives (empty label files). Pixel masks -> bounding boxes via connected components.
@@ -117,7 +117,7 @@ def stratified_split(samples, seed):
 
 
 def write(out_root, splits):
-    # Wipe stale output first — accumulating two different splits causes
+    # Wipe stale output first, accumulating two different splits causes
     # train/val leakage and leftover labels from older class schemes.
     for sub in ["images", "labels"]:
         if (out_root / sub).exists():
@@ -147,7 +147,7 @@ def main():
 
     samples = collect(args.src)
     if not samples:
-        raise SystemExit("No samples found — check --src path and folder names.")
+        raise SystemExit("No samples found, check --src path and folder names.")
     splits = stratified_split(samples, args.seed)
     write(args.out, splits)
 

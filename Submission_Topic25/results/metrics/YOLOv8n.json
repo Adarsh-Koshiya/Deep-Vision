@@ -1,6 +1,6 @@
 {
   "model": "YOLOv8n",
-  "weights": "/home/40a2/DV/Claude code/checkpoints/yolov8n/weights/best.pt",
+  "weights": "weights/yolov8n/best.pt",
   "mAP50": 0.4032,
   "mAP50_95": 0.2748,
   "precision": 0.613,

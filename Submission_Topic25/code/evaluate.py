@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 """
-evaluate.py — validate one trained model on the test split and dump metrics to JSON.
+evaluate.py, validate one trained model on the test split and dump metrics to JSON.
 
-Runs in whichever environment / cwd it is launched from, so call it:
-  - from RTDETR-main/  for Diamond-DETR and RT-DETR (the fork, ultralytics 8.0.201)
-  - from the project root for YOLOv8 / YOLO11 (stock ultralytics)
-
-The notebook then just reads outputs/metrics/*.json — no model is loaded in the
+For DETR models (rtdetr) it inserts the bundled fork (code/diamond_detr/RTDETR-main, ultralytics
+8.0.201) at the front of sys.path so the fork-only modules load; for YOLO models it uses stock
+ultralytics. The notebook then just reads results/metrics/*.json, no model is loaded in the
 notebook kernel, which avoids the fork-vs-stock Ultralytics version clash.
 
-Usage:
-  python evaluate.py --type rtdetr --weights checkpoints/diamond_detr/weights/best.pt \
-      --data tile_yolo/tile.yaml --name Diamond-DETR --out outputs/metrics
+Usage (from the repository root):
+  # DETR, also export the fork on PYTHONPATH so the unpickled custom classes resolve:
+  PYTHONPATH="code/diamond_detr/RTDETR-main:${PYTHONPATH:-}" \
+    python code/evaluate.py --type rtdetr --weights weights/diamond_detr/best.pt \
+      --data dataset/tile_yolo/tile.yaml --name Diamond-DETR --out results/metrics
+  # YOLO, stock ultralytics, no PYTHONPATH needed:
+  python code/evaluate.py --type yolo --weights weights/yolov8n/best.pt \
+      --data dataset/tile_yolo/tile.yaml --name YOLOv8n --out results/metrics
 """
 import argparse
 import json
@@ -43,7 +46,7 @@ def main():
     ap.add_argument("--data", required=True)
     ap.add_argument("--name", required=True, help="display name, e.g. Diamond-DETR")
     ap.add_argument("--imgsz", type=int, default=640)
-    ap.add_argument("--out", default="outputs/metrics", type=Path)
+    ap.add_argument("--out", default="results/metrics", type=Path)
     args = ap.parse_args()
 
     model = load(args.type, args.weights)

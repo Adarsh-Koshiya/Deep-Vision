@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-grad_cam.py — Grad-CAM via the official jacobgil/pytorch-grad-cam library.
+grad_cam.py, Grad-CAM via the official jacobgil/pytorch-grad-cam library.
 
-Standalone (outside the project repo); reads repo checkpoints/images, writes only here.
+Lives in the repo at figures/; reads trained weights from weights/ and test images from
+dataset/tile_yolo/, and writes overlays into figures/overlays/.
 
 Detection heads return per-box outputs, not a single class logit, and the library iterates
 over a (B, K) score tensor. So we wrap each detector to return (B, nc) = the per-class max
@@ -12,6 +13,7 @@ score over all detections, then run the library's GradCAM and explain the top cl
   python grad_cam.py --type yolo   --weights .../yolov8n/weights/best.pt      --name YOLOv8n
 """
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -24,9 +26,12 @@ from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.image import show_cam_on_image
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 
-REPO = Path("/home/40a2/DV/Code")
-FORK = REPO / "diamond_detr" / "RTDETR-main"
-HERE = Path(__file__).resolve().parent
+# Paths resolve relative to this file's location (figures/ inside the repo). Override with
+# DV_REPO (repo root) or DV_TESTDIR (test-split images) if the layout differs.
+HERE = Path(__file__).resolve().parent                       # <repo>/figures
+REPO = Path(os.environ.get("DV_REPO", HERE.parent))          # <repo> root
+FORK = REPO / "code" / "diamond_detr" / "RTDETR-main"        # bundled DETR fork
+TEST_DIR = Path(os.environ.get("DV_TESTDIR", REPO / "dataset" / "tile_yolo" / "images" / "test"))
 NC = 5  # blowhole/break/crack/fray/uneven
 
 
@@ -96,7 +101,7 @@ def main():
         p.requires_grad_(True)
     wrapped = DetWrapper(model, args.type).eval()
 
-    test_dir = REPO / "tile_yolo" / "images" / "test"
+    test_dir = TEST_DIR
     classes = ["Blowhole", "Break", "Crack", "Fray", "Uneven"]
     safe = args.name.replace("/", "_").replace(" ", "_")
     (HERE / "overlays").mkdir(exist_ok=True)
