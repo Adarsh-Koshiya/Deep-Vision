@@ -1,0 +1,17 @@
+# FasterNet-T2 configuration (CVPR 2023: Run, Don't Walk)
+# embed_dim=96, depths=[1,2,8,2]
+# Output channels per stage: [96, 192, 384, 768] at strides [4, 8, 16, 32]
+embed_dim: 96
+depths: [1, 2, 8, 2]
+mlp_ratio: 2.0
+n_div: 4
+patch_size: 4
+patch_stride: 4
+patch_size2: 2
+patch_stride2: 2
+patch_norm: true
+drop_path_rate: 0.1
+layer_scale_init_value: 0
+norm_layer: BN
+act_layer: RELU
+pconv_fw_type: split_cat
