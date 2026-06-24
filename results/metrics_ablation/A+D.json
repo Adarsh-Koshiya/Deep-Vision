@@ -1,0 +1,17 @@
+{
+  "model": "A+D",
+  "weights": "checkpoints/ablation/diamond_AD/weights/best.pt",
+  "mAP50": 0.8383,
+  "mAP50_95": 0.5664,
+  "precision": 0.8378,
+  "recall": 0.8124,
+  "fps": 62.9,
+  "params_M": 18.15,
+  "per_class_mAP50_95": {
+    "blowhole": 0.6406,
+    "break": 0.5441,
+    "crack": 0.5738,
+    "fray": 0.6385,
+    "uneven": 0.4349
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "model": "A_baseline",
+  "weights": "checkpoints/ablation/A_baseline/weights/best.pt",
+  "mAP50": 0.7634,
+  "mAP50_95": 0.514,
+  "precision": 0.7412,
+  "recall": 0.7404,
+  "fps": 60.7,
+  "params_M": 19.88,
+  "per_class_mAP50_95": {
+    "blowhole": 0.6338,
+    "break": 0.6097,
+    "crack": 0.4597,
+    "fray": 0.473,
+    "uneven": 0.3939
+  }
+}

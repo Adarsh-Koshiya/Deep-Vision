@@ -1,0 +1,45 @@
+# A+C  — baseline RT-DETR-r18 + HS-FPN encoder ONLY (no RepFasterNet backbone, no DRBC3)
+# Paper Table 2 additive row "A+C". Standard BasicBlock backbone + HS-FPN neck connectivity, fusion = RepC3 (not DRBC3).
+nc: 80  # overridden at runtime by data.yaml
+scales:
+  l: [1.00, 1.00, 1024]
+
+backbone:
+  - [-1, 1, ConvNormLayer, [32, 3, 2, None, False, 'relu']] # 0-P1/2
+  - [-1, 1, ConvNormLayer, [32, 3, 1, None, False, 'relu']] # 1
+  - [-1, 1, ConvNormLayer, [64, 3, 1, None, False, 'relu']] # 2
+  - [-1, 1, nn.MaxPool2d, [3, 2, 1]] # 3-P2/4
+  - [-1, 1, Blocks, [64, BasicBlock, 2, 2, 'relu']] # 4
+  - [-1, 1, Blocks, [128, BasicBlock, 2, 3, 'relu']] # 5-P3/8
+  - [-1, 1, Blocks, [256, BasicBlock, 2, 4, 'relu']] # 6-P4/16
+  - [-1, 1, Blocks, [512, BasicBlock, 2, 5, 'relu']] # 7-P5/32
+
+head:
+  - [-1, 1, Conv, [256, 1, 1, None, 1, 1, False]]  # 8 input_proj.2
+  - [-1, 1, AIFI, [1024, 8]] # 9
+  - [-1, 1, Conv, [256, 1, 1]]  # 10, Y5, lateral_convs.0
+
+  - [-1, 1, ChannelAttention_HSFPN, []] # 11
+  - [[-1, 10], 1, Multiply, []] # 12
+  - [-1, 1, nn.Conv2d, [256, 1]] # 13
+  - [-1, 3, RepC3, [256, 0.5]] #14
+  - [-2, 1, nn.ConvTranspose2d, [256, 3, 2, 1, 1]] # 15
+
+  - [6, 1, ChannelAttention_HSFPN, []] # 16
+  - [[-1, 6], 1, Multiply, []] #17
+  - [-1, 1, nn.Conv2d, [256, 1]] # 18
+  - [15, 1, ChannelAttention_HSFPN, [4, False]] # 19
+  - [[-1, -2], 1, Multiply, []] # 20
+  - [[-1, 15], 1, Add, []] # 21
+  - [-1, 3, RepC3, [256, 0.5]] # 22 P4/16
+
+  - [15, 1, nn.ConvTranspose2d, [256, 3, 2, 1, 1, 16]] # 23
+  - [5, 1, ChannelAttention_HSFPN, []] # 24
+  - [[-1, 5], 1, Multiply, []] #25
+  - [-1, 1, nn.Conv2d, [256, 1]] # 26
+  - [23, 1, ChannelAttention_HSFPN, [4, False]] # 27
+  - [[-1, -2], 1, Multiply, []] # 28
+  - [[-1, 23], 1, Add, []] # 29
+  - [-1, 3, RepC3, [256, 0.5]] # 30 P3/8
+
+  - [[30, 22, 14], 1, RTDETRDecoder, [nc, 256, 300, 4, 8, 3]]  # Detect(P3, P4, P5)

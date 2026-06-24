@@ -1,0 +1,17 @@
+{
+  "model": "Diamond-DETR",
+  "weights": "checkpoints/diamond_detr/weights/best.pt",
+  "mAP50": 0.7623,
+  "mAP50_95": 0.4893,
+  "precision": 0.7454,
+  "recall": 0.7459,
+  "fps": 56.5,
+  "params_M": 14.27,
+  "per_class_mAP50_95": {
+    "blowhole": 0.6695,
+    "break": 0.5016,
+    "crack": 0.536,
+    "fray": 0.3829,
+    "uneven": 0.3563
+  }
+}

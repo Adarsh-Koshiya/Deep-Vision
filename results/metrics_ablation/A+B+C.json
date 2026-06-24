@@ -1,0 +1,17 @@
+{
+  "model": "noD_no_drbc3",
+  "weights": "checkpoints/ablation/noD_no_drbc3/weights/best.pt",
+  "mAP50": 0.6658,
+  "mAP50_95": 0.4105,
+  "precision": 0.556,
+  "recall": 0.6781,
+  "fps": 56.1,
+  "params_M": 15.57,
+  "per_class_mAP50_95": {
+    "blowhole": 0.6223,
+    "break": 0.4427,
+    "crack": 0.505,
+    "fray": 0.2862,
+    "uneven": 0.1961
+  }
+}

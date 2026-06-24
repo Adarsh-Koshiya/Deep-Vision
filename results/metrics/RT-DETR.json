@@ -1,0 +1,17 @@
+{
+  "model": "RT-DETR",
+  "weights": "checkpoints/rtdetr_baseline/weights/best.pt",
+  "mAP50": 0.7626,
+  "mAP50_95": 0.4455,
+  "precision": 0.7334,
+  "recall": 0.8193,
+  "fps": 40.2,
+  "params_M": 19.88,
+  "per_class_mAP50_95": {
+    "blowhole": 0.5784,
+    "break": 0.4152,
+    "crack": 0.3875,
+    "fray": 0.4633,
+    "uneven": 0.3831
+  }
+}
