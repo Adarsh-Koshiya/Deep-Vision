@@ -1,28 +1,14 @@
 #!/usr/bin/env bash
-# train.sh — full training harness for the Diamond-DETR magnetic-tile study.
-#
-# Runs each model in the RIGHT environment, as a SEPARATE process, because the two
-# model families need incompatible Ultralytics versions:
-#   - DETR family (Diamond-DETR, RT-DETR): the FORK ultralytics 8.0.201, run from
-#     diamond_detr/RTDETR-main/ (its local package shadows any installed one).
-#   - YOLO family (YOLOv8, YOLO11): STOCK modern ultralytics (pip install ultralytics),
-#     run from the project root.
-#
-# Each model trains, then evaluate.py dumps test metrics to outputs/metrics/<name>.json.
-# The notebook reads those JSON files — it never loads a model, so the version clash
-# never reaches the notebook kernel.
-#
-# Prereqs (see Execution_Guide.md Step 1):
-#   git clone https://github.com/bigboyliang/DIAMOND.git diamond_detr
-#   pip install ultralytics            # stock, for the YOLO models + evaluate.py
-#   (the fork provides its own ultralytics 8.0.201 locally — do not pip it)
-#
-# Usage:  bash train.sh           # full 150-epoch paper config
-#         EPOCHS=3 bash train.sh  # quick smoke test
+# Train all four models and write their test metrics to outputs/metrics/<name>.json.
+# The two model families need incompatible Ultralytics versions, so each trains in its own
+# process: the DETRs (Diamond-DETR, RT-DETR) on the forked 8.0.201 in diamond_detr/RTDETR-main/,
+# the YOLOs on the stock 8.4.x install.
+# Prerequisites: clone https://github.com/bigboyliang/DIAMOND.git as diamond_detr, and pip install ultralytics.
+# Run with: bash train.sh   (EPOCHS=3 for a quick smoke test, FORCE=1 overwrites existing metrics).
 set -euo pipefail
 
-# Reduce CUDA memory fragmentation — the transformer models (RT-DETR ~80M params,
-# 240 GFLOPs) are tight on an 8 GB card and fragment easily.
+# Reduce CUDA memory fragmentation. The transformers rely on deformable attention, which is
+# memory-hungry and fragments an 8 GB card even though RT-DETR-r18 is only about 20M params.
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 PROJ="$(cd "$(dirname "$0")" && pwd)"
@@ -31,19 +17,16 @@ DATA="$PROJ/tile_yolo/tile.yaml"
 CKPT="$PROJ/checkpoints"
 METRICS="$PROJ/outputs/metrics"
 
-# Batch 4 = the paper's intended config (Diamond-DETR repo default.yaml, Execution_Guide,
-# notebook all specify batch=4). Verified to fit on the 8 GB RTX 3060 Ti: RT-DETR-r18
-# peaks at ~6.3 GB / 7.65 GB at batch 4. Batch 8 OOMs (do not raise); batch 2 also works
-# but needlessly deviates from the paper. All four models share this batch for a fair comparison.
+# Batch 4 = the paper's config; fits the 8 GB GPU (RT-DETR peaks ~6.3 GB). Batch 8 OOMs. Shared by all 4.
 EPOCHS="${EPOCHS:-200}"
 BATCH="${BATCH:-4}"
 IMGSZ="${IMGSZ:-640}"
 DEVICE="${DEVICE:-0}"
 HP="optimizer='SGD', lr0=1e-4, momentum=0.8, weight_decay=1e-4, seed=42"
 HP_DETR="optimizer='AdamW', lr0=1e-4, momentum=0.9, weight_decay=1e-4, seed=42"
-# RT-DETR pretrained checkpoint: paper's own RTDETR-r18 trained on diamond dataset.
-# nc=2 in checkpoint vs nc=5 here — Ultralytics intersect_dicts partial-loads backbone/neck,
-# reinits the final detection head. Same pattern as YOLO COCO→custom fine-tuning.
+# Pretrained checkpoint for RT-DETR: the paper's own RTDETR-r18, trained on the diamond data.
+# It carries nc=2 against nc=5 here, so Ultralytics intersect_dicts partial-loads the backbone
+# and neck and re-initialises the detection head (the usual COCO-to-custom fine-tuning pattern).
 RTDETR_PT="$PROJ/diamond_detr/adamas/runs/train/RTDETR-r18/weights/best.pt"
 
 mkdir -p "$CKPT" "$METRICS"
@@ -89,7 +72,7 @@ RTDETR(sys.argv[1]).train(data="$DATA", epochs=$EPOCHS, batch=$BATCH, imgsz=$IMG
                           device=$DEVICE, project="$CKPT", name="rtdetr_baseline", exist_ok=True,
                           plots=False, $HP_DETR)
 PYEOF
-  # RT-DETR checkpoint uses fork-only modules (ConvNormLayer etc) — must run with fork on PYTHONPATH
+  # The RT-DETR checkpoint uses fork-only modules (ConvNormLayer and friends), so the fork must be on PYTHONPATH
   PYTHONPATH="$DIAMOND:${PYTHONPATH:-}" python "$PROJ/evaluate.py" --type rtdetr \
     --weights "$CKPT/rtdetr_baseline/weights/best.pt" --data "$DATA" \
     --name "RT-DETR" --imgsz "$IMGSZ" --out "$METRICS"
@@ -108,7 +91,7 @@ RTDETRTrainer(overrides=dict(
     project="$CKPT", name="diamond_detr", exist_ok=True, plots=False,
 )).train()
 PYEOF
-  # Diamond-DETR checkpoint uses fork-only ultralytics.nn.backbone — must run with fork on PYTHONPATH
+  # The Diamond-DETR checkpoint uses fork-only ultralytics.nn.backbone, so the fork must be on PYTHONPATH
   PYTHONPATH="$DIAMOND:${PYTHONPATH:-}" python "$PROJ/evaluate.py" --type rtdetr \
     --weights "$CKPT/diamond_detr/weights/best.pt" --data "$DATA" \
     --name "Diamond-DETR" --imgsz "$IMGSZ" --out "$METRICS"
@@ -116,4 +99,4 @@ fi
 
 cd "$PROJ"
 echo ""
-echo "Done. Metrics in $METRICS/*.json — open the notebook (Sections 4-8) to analyse."
+echo "Done. Metrics in $METRICS/*.json — see report/REPORT.pdf for the analysis."

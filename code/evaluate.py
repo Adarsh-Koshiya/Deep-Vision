@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 """
-evaluate.py — validate one trained model on the test split and dump metrics to JSON.
+Validate one trained model on the test split and write its metrics to JSON.
 
-Runs in whichever environment / cwd it is launched from, so call it:
-  - from RTDETR-main/  for Diamond-DETR and RT-DETR (the fork, ultralytics 8.0.201)
-  - from the project root for YOLOv8 / YOLO11 (stock ultralytics)
+The DETR models (Diamond-DETR, RT-DETR) need the forked Ultralytics 8.0.201 from
+RTDETR-main/; the YOLO models use the stock install. Only the JSON is read afterwards,
+so the two Ultralytics versions never have to coexist in one process.
 
-The notebook then just reads outputs/metrics/*.json — no model is loaded in the
-notebook kernel, which avoids the fork-vs-stock Ultralytics version clash.
-
-Usage:
   python evaluate.py --type rtdetr --weights checkpoints/diamond_detr/weights/best.pt \
-      --data tile_yolo/tile.yaml --name Diamond-DETR --out outputs/metrics
+      --data tile_yolo/tile.yaml --name Diamond-DETR --out results/metrics
 """
 import argparse
 import json
@@ -23,9 +19,9 @@ import numpy as np
 
 def load(model_type, weights):
     if model_type == "rtdetr":
-        # DETR checkpoints reference modules (DRBC3, RepFasterNet) that exist only in
-        # the fork. Put the fork first on sys.path so `import ultralytics` resolves to
-        # 8.0.201, not the stock install — otherwise unpickling the weights fails.
+        # These checkpoints reference fork-only modules (DRBC3, RepFasterNet), so the
+        # fork has to come first on sys.path. Otherwise `import ultralytics` resolves to
+        # the stock install and unpickling the weights fails.
         import sys
         fork = Path(__file__).parent / "diamond_detr" / "RTDETR-main"
         if fork.exists() and str(fork) not in sys.path:
@@ -48,9 +44,8 @@ def main():
 
     model = load(args.type, args.weights)
 
-    # Throughput on a blank frame: one warm-up pass (lets cuDNN pick kernels), then
-    # mean FPS over 50 timed passes. Decoupled from val() so accuracy and speed are
-    # measured independently.
+    # Speed on a blank frame: one warm-up pass (lets cuDNN pick kernels), then mean
+    # FPS over 50 timed passes. Kept separate from val() so speed and accuracy don't mix.
     dummy = np.zeros((args.imgsz, args.imgsz, 3), dtype=np.uint8)
     model.predict(dummy, imgsz=args.imgsz, verbose=False)
     t0 = time.perf_counter()

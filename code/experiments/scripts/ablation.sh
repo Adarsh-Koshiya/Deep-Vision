@@ -1,24 +1,9 @@
 #!/usr/bin/env bash
-# ablation.sh — ADDITIVE ablation of Diamond-DETR's 3 components, matching the paper's Table 2.
-#
-# The Diamond-DETR paper (Scientific Reports 2026) builds its ablation ADDITIVELY — start from
-# baseline A and add ONE module at a time. We replicate that exact shape:
-#   A          rtdetr_r18_paper.yaml   baseline RT-DETR-r18                 19.9M
-#   A+B        diamond_AB.yaml         + RepFasterNet backbone             17.1M
-#   A+C        diamond_AC.yaml         + HS-FPN encoder                    18.9M
-#   A+D        diamond_AD.yaml         + DRBC3 fusion                      18.3M
-#   A+B+C      diamond_ABC.yaml        + RepFaster + HS-FPN                15.6M
-#   A+B+C+D    ../Diamond-detr.yaml    full Diamond-DETR                   14.3M
-#
-# All trained identically (AdamW, lr 1e-4, 200 ep, batch 4, seed 42, from random init) — only the
-# component set varies. A row is skipped if its JSON already exists (FORCE=1 to retrain). The full
-# A+B+C+D point is reused from the main study (outputs/metrics/Diamond-DETR.json), not retrained.
-#
-# NOTE: the earlier leave-one-out variants (noB=A+C+D, noC=A+B+D) are NOT paper rows and were removed.
-#
-# Batch 4 needs a near-empty GPU (~6.5 GB peak); the wait-guard blocks each row until >=7 GB is free.
-# Run in screen:
-#   screen -dmS abl bash -c 'bash experiments/scripts/ablation.sh 2>&1 | tee experiments/ablation.log'
+# Component ablation of Diamond-DETR (backbone B, neck C, fusion D).
+# Trains A, A+B, A+C, A+D and A+B+C from random init (AdamW, lr 1e-4, 200 ep, batch 4, seed 42) and
+# reuses the full model as A+B+C+D. Together with A+B+D and A+C+D these are the eight configurations
+# of the paper's Table 2 factorial. A row is skipped if its JSON already exists (FORCE=1 retrains);
+# wait_gpu blocks until 7 GB of GPU memory is free.
 set -euo pipefail
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
@@ -32,7 +17,7 @@ HP="optimizer='AdamW', lr0=1e-4, momentum=0.9, weight_decay=1e-4, seed=42"
 mkdir -p "$OUT" "$CKPT"
 cd "$DIAMOND"
 
-# Pre-flight: never train on a leaked dataset (this has bitten the project twice).
+# Pre-flight guard: abort if any image is shared between the train and test splits.
 ov=$(comm -12 <(ls "$PROJ/tile_yolo/images/train"|sort) <(ls "$PROJ/tile_yolo/images/test"|sort)|wc -l)
 [ "$ov" -eq 0 ] || { echo "ABORT: train/test overlap=$ov — dataset leaked. Run prepare_data.py."; exit 1; }
 
@@ -70,4 +55,4 @@ done
   echo "WARN: outputs/metrics/Diamond-DETR.json missing — full point not copied"
 
 echo ""
-echo "Done. Additive ablation (A, A+B, A+C, A+D, A+B+C, A+B+C+D) in $OUT/  → notebook §5 reads them; fill REPORT.md Table 2."
+echo "Done. Ablation metrics in $OUT/ (A, A+B, A+C, A+D, A+B+C, A+B+C+D)."

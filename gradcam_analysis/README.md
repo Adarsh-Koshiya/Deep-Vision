@@ -1,7 +1,7 @@
 # Grad-CAM attention analysis (standalone)
 
-**Separate from the project repo** (`/home/40a2/DV/Code`) on purpose. This folder only
-*reads* the repo's checkpoints and test images; it writes nothing back into the repo.
+**Separate from the training project tree** on purpose: this folder only *reads* the trained
+checkpoints and test images and writes nothing back.
 
 ## What this is
 **Grad-CAM via the official `jacobgil/pytorch-grad-cam` library** (Selvaraju et al., 2017) —
@@ -23,12 +23,12 @@ Method (`grad_cam.py`):
 
 ## Reproduce
 ```bash
-cd /home/40a2/DV/gradcam_analysis
-python grad_cam.py --type rtdetr --weights /home/40a2/DV/Code/checkpoints/diamond_detr/weights/best.pt   --name Diamond-DETR
-python grad_cam.py --type rtdetr --weights /home/40a2/DV/Code/checkpoints/rtdetr_baseline/weights/best.pt --name RT-DETR
-python grad_cam.py --type yolo   --weights /home/40a2/DV/Code/checkpoints/yolov8n/weights/best.pt --name YOLOv8n
-python grad_cam.py --type yolo   --weights /home/40a2/DV/Code/checkpoints/yolo11n/weights/best.pt --name YOLO11n
-# then re-stitch the grid (see the compose snippet in the project plan, writes gradcam_comparison.png)
+# weights are on GitLab (see the main README); the paths below are from the original machine
+python grad_cam.py --type rtdetr --weights checkpoints/diamond_detr/weights/best.pt    --name Diamond-DETR
+python grad_cam.py --type rtdetr --weights checkpoints/rtdetr_baseline/weights/best.pt --name RT-DETR
+python grad_cam.py --type yolo   --weights checkpoints/yolov8n/weights/best.pt         --name YOLOv8n
+python grad_cam.py --type yolo   --weights checkpoints/yolo11n/weights/best.pt         --name YOLO11n
+# per-class overlays land in overlays/; gradcam_comparison.png is the assembled grid
 ```
 
 ## Findings (consistent with the quantitative results)
@@ -42,5 +42,3 @@ python grad_cam.py --type yolo   --weights /home/40a2/DV/Code/checkpoints/yolo11
 ## Notes
 - Target = deepest backbone layer (coarse 20×20 localisation — standard Grad-CAM granularity).
   For sharper maps, target a shallower layer (P4/40×40).
-- To embed in the notebook (§6) later: copy `gradcam_comparison.png` → `Code/outputs/gradcam.png`
-  (kept separate here by request).

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# multiseed.sh — re-train all 4 final models under one extra seed for mean±std (Task 3).
+# Re-train all four final models under one extra seed to get mean and standard deviation.
+# Each model keeps its exact final recipe; only the seed and the output directory change.
+#   SEED=1 bash experiments/scripts/multiseed.sh   writes outputs/metrics_seed1/*.json
+#   SEED=2 bash experiments/scripts/multiseed.sh   writes outputs/metrics_seed2/*.json
+#   python experiments/scripts/aggregate_seeds.py  combines seed 42 with the new seed dirs.
 #
-# Each model keeps its exact final recipe; only the seed and output dir change.
-#   SEED=1 bash experiments/scripts/multiseed.sh   → outputs/metrics_seed1/*.json
-#   SEED=2 bash experiments/scripts/multiseed.sh   → outputs/metrics_seed2/*.json
-# Then: python experiments/scripts/aggregate_seeds.py   (mean±std across seed42 + seedN dirs)
-#
-# Cost per seed: 2 CNNs (~40 min) + 2 transformers (~5–7 h) ≈ 6–8 h on a free GPU. Run in screen.
-# Statistical note: seed 42 results already live in outputs/metrics/. Add seeds 1,2(,3) for n≥3.
+# Budget roughly 6 to 8 h per seed on a free GPU (two CNNs about 40 min, two transformers about
+# 5 to 7 h); screen is convenient. Seed 42 already lives in outputs/metrics/, so seeds 1 and 2
+# (and 3) bring the count to n>=3.
 set -euo pipefail
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 SEED="${SEED:?set SEED, e.g. SEED=1 bash multiseed.sh}"

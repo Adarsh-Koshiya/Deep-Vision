@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Aggregate per-seed metrics into mean ± std (Task 3).
+"""Aggregate per-seed metrics into mean ± std.
 
 Reads outputs/metrics/ (seed 42) + outputs/metrics_seed*/ and reports mean±std per model.
 No deps beyond the stdlib + the JSONs evaluate.py writes.

@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """
-prepare_data.py — turn the Magnetic Tile pixel masks into a YOLO detection set.
+Build a YOLO detection dataset from the Magnetic Tile segmentation masks.
 
-The dataset ships segmentation masks, not boxes. We take the tight bounding box of
-each connected mask region as one detection over five classes (blowhole, break,
-crack, fray, uneven). Defect-free tiles are kept as negatives with empty labels, so
-the detector also learns what a clean surface looks like.
+The dataset provides per-pixel masks rather than boxes. Each connected mask region
+becomes one bounding box over the five defect classes (blowhole, break, crack, fray,
+uneven). Defect-free tiles are kept as negatives with empty label files.
 
-Stratified 70/20/10 split per defect type (seeded); the output tree is wiped first
-so re-running replaces the split rather than overlaying it.
+The split is a seeded, stratified 70/20/10 over the classes. The output tree is
+cleared before writing, so a second run replaces the split instead of merging into it.
 
     python prepare_data.py --src Magnetic-Tile-Defect --out tile_yolo
 """
@@ -26,7 +25,7 @@ NORMAL_TYPE = "MT_Free"
 CLASS_NAMES = ["blowhole", "break", "crack", "fray", "uneven"]
 TYPE_TO_ID = {t: i for i, t in enumerate(DEFECT_TYPES)}
 
-MIN_AREA = 20  # px; below this a component is annotation speckle / JPEG fringe, not a defect
+MIN_AREA = 20  # px; smaller blobs are mask speckle rather than real defects
 
 
 def mask_to_boxes(mask_path, img_w, img_h, cls_id):
@@ -38,7 +37,7 @@ def mask_to_boxes(mask_path, img_w, img_h, cls_id):
         mask = cv2.resize(mask, (img_w, img_h), interpolation=cv2.INTER_NEAREST)
     n, _, stats, _ = cv2.connectedComponentsWithStats((mask > 127).astype(np.uint8))
     lines = []
-    for i in range(1, n):  # skip background component 0
+    for i in range(1, n):  # label 0 is the background
         if stats[i, cv2.CC_STAT_AREA] < MIN_AREA:
             continue
         x, y = stats[i, cv2.CC_STAT_LEFT], stats[i, cv2.CC_STAT_TOP]
@@ -78,8 +77,8 @@ def collect(src):
             mask = find_mask(img_path)
             lines = mask_to_boxes(mask, w, h, cls_id) if mask else []
             if not lines:
-                # mask present but empty after thresholding — the tile is labelled
-                # defective, so box the whole frame rather than drop the sample
+                # a defect-labelled tile with no usable mask (empty or missing):
+                # keep the sample by boxing the whole frame
                 lines = [f"{cls_id} 0.5 0.5 0.95 0.95"]
                 fallback += 1
             samples.append(dict(img=img_path, label="\n".join(lines), dtype=dtype))
@@ -107,8 +106,8 @@ def stratified_split(samples, seed):
 
 
 def write(out_root, splits):
-    # Wipe first: a re-run must replace the split, never overlay it. Overlaying a
-    # second split onto an old one is how the same tile ends up in train and test.
+    # Clear the tree first so a re-run replaces the split. Merging a new split into an
+    # old one is what lets a single tile land in both train and test.
     for sub in ["images", "labels"]:
         if (out_root / sub).exists():
             shutil.rmtree(out_root / sub)

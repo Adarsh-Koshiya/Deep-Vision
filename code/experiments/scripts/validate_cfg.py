@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Quick build + forward-pass check for an RT-DETR/Diamond ablation YAML.
-Run with the fork on PYTHONPATH. Prints param count and output shapes, or the error.
+"""Build an RT-DETR/Diamond ablation config and run one forward pass to confirm it is valid.
+
+Needs the fork on PYTHONPATH. Prints the parameter count and output shapes, or the error.
 
   PYTHONPATH=$DIAMOND python validate_cfg.py <abs_or_rel_yaml>
 """

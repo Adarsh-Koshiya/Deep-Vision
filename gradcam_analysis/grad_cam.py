@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-grad_cam.py — Grad-CAM via the official jacobgil/pytorch-grad-cam library.
+Grad-CAM attention maps via the official jacobgil/pytorch-grad-cam library.
 
-Standalone (outside the project repo); reads repo checkpoints/images, writes only here.
+Runs standalone, outside the training project: it reads the trained checkpoints and test
+images and writes only into this folder.
 
-Detection heads return per-box outputs, not a single class logit, and the library iterates
-over a (B, K) score tensor. So we wrap each detector to return (B, nc) = the per-class max
-score over all detections, then run the library's GradCAM and explain the top class.
+A detector head returns per-box outputs rather than a single class logit, while the library
+expects a (B, K) score tensor. Each detector is therefore wrapped to return (B, nc), the
+per-class maximum score over all detections, and Grad-CAM then explains the top class.
 
   python grad_cam.py --type rtdetr --weights .../diamond_detr/weights/best.pt --name Diamond-DETR
   python grad_cam.py --type yolo   --weights .../yolov8n/weights/best.pt      --name YOLOv8n
@@ -70,7 +71,7 @@ class DetWrapper(nn.Module):
 
 
 def pick_target_layer(model, x):
-    """Deepest backbone Conv2d (smallest spatial map, >=8)."""
+    """Conv2d with the smallest spatial map (>=8), which is usually the last backbone stage."""
     seen = []
     handles = [m.register_forward_hook(
         lambda mod, i, o, r=m: seen.append((r, o.shape))
